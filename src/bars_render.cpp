@@ -1,4 +1,4 @@
-#include "led_spectrum_renderer.hpp"
+#include "led_spectrum_renderer.h"
 #include <queue>
 
 CRGB leds_plus_safety_pixel[NUM_LEDS + 1];

@@ -1,8 +1,8 @@
 #pragma once
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
-#include "display_config.hpp"
-#include "led_spectrum_renderer.hpp"
+#include "display_config.h"
+#include "led_spectrum_renderer.h"
 
 class SpectrumWebsocket
 {

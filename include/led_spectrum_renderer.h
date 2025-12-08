@@ -1,6 +1,6 @@
 #pragma once
 #include <FastLED.h>
-#include "display_config.hpp"
+#include "display_config.h"
 
 #define LED_PIN 4
 #define SATURATION 255

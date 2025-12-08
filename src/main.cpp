@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "spectrum_websocket.hpp"
+#include "spectrum_websocket.h"
 
 SpectrumWebsocket spectrumWebsocket;
 

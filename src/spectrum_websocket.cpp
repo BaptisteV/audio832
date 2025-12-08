@@ -1,4 +1,4 @@
-#include "spectrum_websocket.hpp"
+#include "spectrum_websocket.h"
 
 Spectrum spectrum;
 DisplayConfig conf;
