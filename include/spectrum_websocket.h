@@ -13,7 +13,7 @@ public:
 
 private:
     WebSocketsServer webSocket;
-    LEDSpectrumRenderer spectrumRenderer;
+    static LEDSpectrumRenderer spectrumRenderer;
     static SpectrumWebsocket *instance;
     static void onMessageReceived(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
 

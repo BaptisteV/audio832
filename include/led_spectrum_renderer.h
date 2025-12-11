@@ -31,6 +31,8 @@ public:
     LEDSpectrumRenderer();
     void setupLeds();
     void render(const Spectrum &newSpectrum, const DisplayConfig &config);
+    void turnOff(const DisplayConfig &conf);
 
 private:
+    bool skipRender;
 };

@@ -6,6 +6,7 @@ CRGB *const leds = leds_plus_safety_pixel + 1;
 
 LEDSpectrumRenderer::LEDSpectrumRenderer()
 {
+    //renderMutex = xSemaphoreCreateMutex();
 }
 
 void LEDSpectrumRenderer::setupLeds()
@@ -51,7 +52,7 @@ void drawBars(const Spectrum &bars, int bri, const DisplayConfig &c)
 
 void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c)
 {
-    const long msStart = millis();
+    FastLED.clear(false);
     const uint8_t configuredHistoLength = c.histoLength;
     // Last frame is last in his
     spectrumHistory.push_back(newBars);
@@ -62,8 +63,8 @@ void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c
 
     const int histSize = spectrumHistory.size();
 
-    // max brightness for histo is set to 80% of the max brightness
-    const int maxHistBri = c.brightness * 0.8;
+    // Max brightness for histo is set to 90% of the max brightness
+    const int maxHistBri = c.brightness * 0.9;
 
     const int briHistoStep = maxHistBri / histSize;
     int bri = briHistoStep;
@@ -78,8 +79,27 @@ void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c
 
     // Write lastest frame at full brightness
     drawBars(newBars, c.brightness, c);
-    const long msEnd = millis();
-    // Serial.printf("Rendered in %dms\n", msEnd - msStart);
+    FastLED.show();
+}
+
+void LEDSpectrumRenderer::turnOff(const DisplayConfig &conf)
+{
+    if (spectrumHistory.empty())
+    {
+        return;
+    }
+
+    FastLED.clear();
+
+    auto spectrumStart = spectrumHistory.back();
+    int startBrightness = conf.brightness;
+    for (int b = startBrightness; b >= 0; b -= 1)
+    {
+        delay(7);
+        drawBars(spectrumStart, b, conf);
+        FastLED.show();
+    }
+    spectrumHistory.clear();
 }
 
 uint16_t XY(uint8_t x, uint8_t y)

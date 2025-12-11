@@ -1,8 +1,10 @@
 #include "spectrum_websocket.h"
+#include "perf_watcher.h"
 
 Spectrum spectrum;
 DisplayConfig conf;
 SpectrumWebsocket *SpectrumWebsocket::instance = nullptr;
+LEDSpectrumRenderer SpectrumWebsocket::spectrumRenderer;
 
 const int PORT = 81;
 
@@ -20,7 +22,7 @@ void SpectrumWebsocket::start()
     while (WiFi.status() != WL_CONNECTED)
     {
     }
-    Serial.printf("Wifi connected, starting ws://%s:%d\n", WiFi.localIP().toString(), PORT);
+    Serial.printf("Wifi connected, starting ws://%s:%d\n", WiFi.localIP().toString().c_str(), PORT);
     Serial.println("WebSocket server starting");
     webSocket.onEvent(onMessageReceived);
     webSocket.begin();
@@ -46,9 +48,7 @@ Spectrum unpackBinaryData(const uint8_t *mem, uint32_t len)
 void SpectrumWebsocket::onNewBarsReceived(uint8_t *payload, size_t length)
 {
     spectrum = unpackBinaryData(payload, length);
-    FastLED.clear(false);
     spectrumRenderer.render(spectrum, conf);
-    FastLED.show();
 }
 
 void SpectrumWebsocket::onNewDisplayConfigReceived(uint8_t *payload)
@@ -82,8 +82,10 @@ void SpectrumWebsocket::onMessageReceived(uint8_t num, WStype_t type, uint8_t *p
         Serial.printf("[%u] Client connected!\n", num);
 
     if (type == WStype_DISCONNECTED)
+    {
         Serial.printf("[%u] Client disconnected!\n", num);
-
+        spectrumRenderer.turnOff(conf);
+    }
     if (type == WStype_BIN && length == 16)
         instance->onNewBarsReceived(payload, length);
 
