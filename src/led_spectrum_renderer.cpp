@@ -6,7 +6,6 @@ CRGB *const leds = leds_plus_safety_pixel + 1;
 
 LEDSpectrumRenderer::LEDSpectrumRenderer()
 {
-    //renderMutex = xSemaphoreCreateMutex();
 }
 
 void LEDSpectrumRenderer::setupLeds()

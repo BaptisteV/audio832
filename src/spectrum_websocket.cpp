@@ -1,5 +1,6 @@
 #include "spectrum_websocket.h"
 #include "perf_watcher.h"
+#include <ESPmDNS.h>
 
 Spectrum spectrum;
 DisplayConfig conf;
@@ -13,17 +14,28 @@ SpectrumWebsocket::SpectrumWebsocket() : webSocket(PORT)
     instance = this;
 }
 
-void SpectrumWebsocket::start()
+const char hostname[18] = "esp32-spectrum-32";
+void setupWifi()
 {
-    spectrumRenderer.setupLeds();
-    Serial.println("Wifi connecting...");
+    Serial.println("Wifi connection...");
     WiFi.begin("Plop", "$Plop123");
-    // check wi-fi is connected to wi-fi network
+    WiFi.setHostname(hostname);
+    if (!MDNS.begin(hostname))
+    {
+        Serial.println("Error starting mDNS");
+    }
+
     while (WiFi.status() != WL_CONNECTED)
     {
     }
-    Serial.printf("Wifi connected, starting ws://%s:%d\n", WiFi.localIP().toString().c_str(), PORT);
-    Serial.println("WebSocket server starting");
+    Serial.printf("Wifi connected\nMac [%s] IP: [%s]\n", WiFi.macAddress().c_str(), WiFi.localIP().toString().c_str());
+}
+
+void SpectrumWebsocket::start()
+{
+    spectrumRenderer.setupLeds();
+    setupWifi();
+    Serial.printf("Starting ws://%s:%d\n", WiFi.getHostname(), PORT);
     webSocket.onEvent(onMessageReceived);
     webSocket.begin();
     Serial.println("WebSocket server started");
