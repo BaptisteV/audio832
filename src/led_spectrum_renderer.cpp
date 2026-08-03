@@ -4,10 +4,8 @@
 CRGB leds_plus_safety_pixel[NUM_LEDS + 1];
 CRGB *const leds = leds_plus_safety_pixel + 1;
 
-Spectrum zeroSpectrum;
 LEDSpectrumRenderer::LEDSpectrumRenderer()
 {
-    std::fill(std::begin(zeroSpectrum), std::end(zeroSpectrum), 0);
 }
 
 // Initializes Red in the top corners, Blue in the bottom ones
@@ -25,10 +23,11 @@ void topBottomColors()
 
 void LEDSpectrumRenderer::setupLeds()
 {
+    FastLED.clear();
     Serial.printf("Setting up LEDs...\n");
     FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    topBottomColors();
     FastLED.clear();
+    topBottomColors();
     FastLED.show();
     Serial.printf("LEDs set up\n");
 }
@@ -76,11 +75,7 @@ void drawBarsWithBri(const Spectrum &spectrum, const DisplayConfig &config, int 
 void LEDSpectrumRenderer::render(const Spectrum &newSpectrum, const DisplayConfig &config)
 {
     FastLED.clear(false);
-    if (newSpectrum == zeroSpectrum)
-    {
-        Serial.println("Skipped empty spectrum");
-        return;
-    }
+    
     const uint8_t configuredHistoLength = config.histoLength;
     // Last frame is last in his
     spectrumHistory.push_back(newSpectrum);
