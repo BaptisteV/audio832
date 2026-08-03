@@ -1,4 +1,3 @@
-#pragma once
 #include <memory>
 
 // If using C++11, define make_unique (remove if compiling with C++14 or later)

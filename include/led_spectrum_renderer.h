@@ -1,4 +1,7 @@
 #pragma once
+#ifndef LED_SPECTRUM_RENDERER_H
+#define LED_SPECTRUM_RENDERER_H
+
 #include <FastLED.h>
 #include "display_config.h"
 
@@ -11,10 +14,10 @@
 const bool kMatrixSerpentineLayout = true;
 const bool kMatrixVertical = true;
 
-#define NUM_LEDS (kMatrixWidth * kMatrixHeight)
-
 const uint8_t kMatrixWidth = 32;
 const uint8_t kMatrixHeight = 8;
+
+#define NUM_LEDS (kMatrixWidth * kMatrixHeight)
 
 extern CRGB leds_plus_safety_pixel[NUM_LEDS + 1];
 extern CRGB *const leds;
@@ -36,3 +39,5 @@ public:
 private:
     bool skipRender;
 };
+
+#endif

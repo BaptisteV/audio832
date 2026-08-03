@@ -4,16 +4,33 @@
 CRGB leds_plus_safety_pixel[NUM_LEDS + 1];
 CRGB *const leds = leds_plus_safety_pixel + 1;
 
+Spectrum zeroSpectrum;
 LEDSpectrumRenderer::LEDSpectrumRenderer()
 {
+    std::fill(std::begin(zeroSpectrum), std::end(zeroSpectrum), 0);
+}
+
+// Initializes Red in the top corners, Blue in the bottom ones
+// Intended to be able to place the LED matrix in the correct way
+void topBottomColors()
+{
+    // Top
+    leds[XYsafe(0, kMatrixHeight)] = CRGB::Red;
+    leds[XYsafe(kMatrixWidth, kMatrixHeight)] = CRGB::Red;
+
+    // Bottom
+    leds[XYsafe(0, 0)] = CRGB::Green;
+    leds[XYsafe(kMatrixWidth, 0)] = CRGB::Green;
 }
 
 void LEDSpectrumRenderer::setupLeds()
 {
+    Serial.printf("Setting up LEDs...\n");
     FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    leds[XYsafe(0, 0)] = CRGB::Blue;
-    leds[XYsafe(kMatrixWidth - 1, kMatrixHeight - 1)] = CRGB::Red;
+    topBottomColors();
+    FastLED.clear();
     FastLED.show();
+    Serial.printf("LEDs set up\n");
 }
 
 std::deque<Spectrum> spectrumHistory;
@@ -27,34 +44,46 @@ uint8_t yToHue(int y, const DisplayConfig &c)
     return c.lowHue;
 }
 
-CHSV colorFromHueAndB(int y, int b, const DisplayConfig &c)
-{
-    auto hue = yToHue(y, c);
-    return CHSV(hue, SATURATION, b);
-}
-
-void drawSingleBar(int x, int upto, int brightness, const DisplayConfig &c)
+void drawSingleBar(int x, int upto, const DisplayConfig &config, int briOverride = -1)
 {
     for (int y = 0; y < upto; y++)
     {
-        leds[XYsafe(x, y)] = colorFromHueAndB(y, brightness, c);
+        auto hue = yToHue(y, config);
+        auto bri = config.brightness;
+        if (briOverride != -1)
+            bri = briOverride;
+        auto color = CHSV(hue, SATURATION, bri);
+        leds[XYsafe(x, y)] = color;
     }
 }
 
-void drawBars(const Spectrum &bars, int bri, const DisplayConfig &c)
+void drawBars(const Spectrum &spectrum, const DisplayConfig &config)
 {
-    for (int x = 0; x < bars.size(); x++)
+    for (int x = 0; x < spectrum.size(); x++)
     {
-        drawSingleBar(x, bars[x], bri, c);
+        drawSingleBar(x, spectrum[x], config);
     }
 }
 
-void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c)
+void drawBarsWithBri(const Spectrum &spectrum, const DisplayConfig &config, int briOverride)
+{
+    for (int x = 0; x < spectrum.size(); x++)
+    {
+        drawSingleBar(x, spectrum[x], config, briOverride);
+    }
+}
+
+void LEDSpectrumRenderer::render(const Spectrum &newSpectrum, const DisplayConfig &config)
 {
     FastLED.clear(false);
-    const uint8_t configuredHistoLength = c.histoLength;
+    if (newSpectrum == zeroSpectrum)
+    {
+        Serial.println("Skipped empty spectrum");
+        return;
+    }
+    const uint8_t configuredHistoLength = config.histoLength;
     // Last frame is last in his
-    spectrumHistory.push_back(newBars);
+    spectrumHistory.push_back(newSpectrum);
     while (spectrumHistory.size() > configuredHistoLength)
     {
         spectrumHistory.pop_front();
@@ -63,7 +92,7 @@ void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c
     const int histSize = spectrumHistory.size();
 
     // Max brightness for histo is set to 90% of the max brightness
-    const int maxHistBri = c.brightness * 0.9;
+    const int maxHistBri = config.brightness * 0.9;
 
     const int briHistoStep = maxHistBri / histSize;
     int bri = briHistoStep;
@@ -72,12 +101,12 @@ void LEDSpectrumRenderer::render(const Spectrum &newBars, const DisplayConfig &c
     for (int iHis = 0; iHis < histSize - 1; iHis++)
     {
         auto hbars = spectrumHistory[iHis];
-        drawBars(hbars, bri, c);
+        drawBarsWithBri(hbars, config, bri);
         bri += briHistoStep;
     }
 
     // Write lastest frame at full brightness
-    drawBars(newBars, c.brightness, c);
+    drawBars(newSpectrum, config);
     FastLED.show();
 }
 
@@ -85,20 +114,29 @@ void LEDSpectrumRenderer::turnOff(const DisplayConfig &conf)
 {
     if (spectrumHistory.empty())
     {
-        return;
+        // Back to initial state
+        FastLED.clear();
+        topBottomColors();
+        FastLED.show();
     }
 
     FastLED.clear();
 
-    auto spectrumStart = spectrumHistory.back();
+    // Loop back + fade on recorded history
+    Spectrum spectrumStart = spectrumHistory.back();
     int startBrightness = conf.brightness;
     for (int b = startBrightness; b >= 0; b -= 1)
     {
         delay(7);
-        drawBars(spectrumStart, b, conf);
+        drawBarsWithBri(spectrumStart, conf, b);
         FastLED.show();
     }
     spectrumHistory.clear();
+
+    // Back to initial state
+    FastLED.clear();
+    topBottomColors();
+    FastLED.show();
 }
 
 uint16_t XY(uint8_t x, uint8_t y)

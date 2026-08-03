@@ -12,9 +12,9 @@ void setup()
 void loop()
 {
     spectrumWebsocket.loop();
-    EVERY_N_MILLIS(10000)
+    EVERY_N_MILLIS(5000)
     {
-        Serial.print(FastLED.getFPS());
+        Serial.print((int)FastLED.getFPS());
         Serial.println(" fps");
     }
 }

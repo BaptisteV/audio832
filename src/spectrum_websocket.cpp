@@ -2,7 +2,7 @@
 #include "perf_watcher.h"
 #include <ESPmDNS.h>
 
-Spectrum spectrum;
+Spectrum spectrum = {0};
 DisplayConfig conf;
 SpectrumWebsocket *SpectrumWebsocket::instance = nullptr;
 LEDSpectrumRenderer SpectrumWebsocket::spectrumRenderer;
@@ -63,6 +63,11 @@ void SpectrumWebsocket::onNewBarsReceived(uint8_t *payload, size_t length)
     spectrumRenderer.render(spectrum, conf);
 }
 
+void printDisplayConfig(const DisplayConfig &conf)
+{
+    Serial.printf("New dislay config: Histo length: %d\tBrightness: %d\n", conf.histoLength, conf.brightness);
+}
+
 void SpectrumWebsocket::onNewDisplayConfigReceived(uint8_t *payload)
 {
     JsonDocument doc;
@@ -80,6 +85,8 @@ void SpectrumWebsocket::onNewDisplayConfigReceived(uint8_t *payload)
     conf.midHue = doc["MidHue"].as<uint8_t>();
     conf.lowHue = doc["LowHue"].as<uint8_t>();
     conf.histoLength = doc["HistoLength"].as<uint8_t>();
+
+    Serial.printf("New dislay config received: Histo length: %d\tBrightness: %d\n", conf.histoLength, conf.brightness);
 }
 
 void SpectrumWebsocket::onMessageReceived(uint8_t num, WStype_t type, uint8_t *payload, size_t length)

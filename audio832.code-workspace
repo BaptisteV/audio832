@@ -1,7 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": "./include"
+		},
+		{
+			"path": "./src"
 		}
 	],
 	"settings": {}
