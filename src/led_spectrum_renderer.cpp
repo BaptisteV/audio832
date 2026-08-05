@@ -8,22 +8,21 @@ LEDSpectrumRenderer::LEDSpectrumRenderer()
 {
 }
 
-// Initializes Red in the top corners, Blue in the bottom ones
+// Initializes Red in the top corners, Green in the bottom ones
 // Intended to be able to place the LED matrix in the correct way
 void topBottomColors()
 {
     // Top
-    leds[XYsafe(0, kMatrixHeight)] = CRGB::Red;
-    leds[XYsafe(kMatrixWidth, kMatrixHeight)] = CRGB::Red;
+    leds[XY(0, kMatrixHeight - 1)] = CRGB::Red;
+    leds[XY(kMatrixWidth - 1, kMatrixHeight - 1)] = CRGB::Red;
 
     // Bottom
-    leds[XYsafe(0, 0)] = CRGB::Green;
-    leds[XYsafe(kMatrixWidth, 0)] = CRGB::Green;
+    leds[XY(0, 0)] = CRGB::Green;
+    leds[XY(kMatrixWidth - 1, 0)] = CRGB::Green;
 }
 
 void LEDSpectrumRenderer::setupLeds()
 {
-    FastLED.clear();
     Serial.printf("Setting up LEDs...\n");
     FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.clear();
@@ -36,9 +35,9 @@ std::deque<Spectrum> spectrumHistory;
 
 uint8_t yToHue(int y, const DisplayConfig &c)
 {
-    if (y > 6)
+    if (y >= 6)
         return c.highHue;
-    if (y > 4)
+    if (y >= 4)
         return c.midHue;
     return c.lowHue;
 }
@@ -75,7 +74,7 @@ void drawBarsWithBri(const Spectrum &spectrum, const DisplayConfig &config, int 
 void LEDSpectrumRenderer::render(const Spectrum &newSpectrum, const DisplayConfig &config)
 {
     FastLED.clear(false);
-    
+
     const uint8_t configuredHistoLength = config.histoLength;
     // Last frame is last in his
     spectrumHistory.push_back(newSpectrum);
@@ -107,18 +106,16 @@ void LEDSpectrumRenderer::render(const Spectrum &newSpectrum, const DisplayConfi
 
 void LEDSpectrumRenderer::turnOff(const DisplayConfig &conf)
 {
+    FastLED.clear();
     if (spectrumHistory.empty())
     {
-        // Back to initial state
-        FastLED.clear();
         topBottomColors();
-        FastLED.show();
     }
 
-    FastLED.clear();
-
-    // Loop back + fade on recorded history
+    // Fade out last frame
     Spectrum spectrumStart = spectrumHistory.back();
+    spectrumHistory.clear();
+
     int startBrightness = conf.brightness;
     for (int b = startBrightness; b >= 0; b -= 1)
     {
@@ -126,10 +123,6 @@ void LEDSpectrumRenderer::turnOff(const DisplayConfig &conf)
         drawBarsWithBri(spectrumStart, conf, b);
         FastLED.show();
     }
-    spectrumHistory.clear();
-
-    // Back to initial state
-    FastLED.clear();
     topBottomColors();
     FastLED.show();
 }
@@ -139,10 +132,12 @@ uint16_t XY(uint8_t x, uint8_t y)
     uint16_t i;
     if (x & 0x01)
     {
-        i = kMatrixHeight * (kMatrixWidth - (x + 1)) + y;
+        // Colonnes impaires : ordre croissant (y=0 en haut de la plage)
+        i = kMatrixHeight * (kMatrixWidth - x - 1) + y;
     }
     else
     {
+        // Colonnes paires : ordre décroissant (y=0 en bas de la plage)
         i = kMatrixHeight * (kMatrixWidth - x) - (y + 1);
     }
 
@@ -154,6 +149,6 @@ uint16_t XYsafe(uint8_t x, uint8_t y)
     if (x >= kMatrixWidth)
         return -1;
     if (y >= kMatrixHeight)
-        return -1;
+        return XY(x, kMatrixHeight - 1);
     return XY(x, y);
 }

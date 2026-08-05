@@ -8,7 +8,7 @@
 struct DisplayConfig
 {
     uint8_t histoLength = 25;
-    uint8_t brightness = 50;
+    uint8_t brightness = 100;
     uint8_t lowHue = 96;
     uint8_t midHue = 64;
     uint8_t highHue = 0;

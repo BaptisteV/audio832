@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LED_SPECTRUM_RENDERER_H
-#define LED_SPECTRUM_RENDERER_H
 
 #include <FastLED.h>
 #include "display_config.h"
@@ -39,5 +37,3 @@ public:
 private:
     bool skipRender;
 };
-
-#endif
